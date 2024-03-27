@@ -1,9 +1,9 @@
-[submodule "hdl/bbt-sitcp-core"]
-	path = hdl/bbt-sitcp-core
-	url = https://github.com/BeeBeansTechnologies/SiTCP_Netlist_for_Kintex7.git
-[submodule "hdl/mikumari"]
-	path = hdl/mikumari
-	url = https://github.com/RyotaroHonda/mikumari.git
 [submodule "hdl/phaseSelection"]
 	path = hdl/phaseSelection
 	url = https://github.com/saz12341/phaseSelection.git
+[submodule "hdl/mikumari"]
+	path = hdl/mikumari
+	url = https://github.com/RyotaroHonda/mikumari.git
+[submodule "hdl/bbt-sitcp-core"]
+	path = hdl/bbt-sitcp-core
+	url = https://github.com/BeeBeansTechnologies/SiTCP_Netlist_for_Kintex7.git
