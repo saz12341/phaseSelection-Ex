@@ -14,6 +14,7 @@ use mylib.defSiTCP.all;
 use mylib.defRBCP.all;
 use mylib.defMiiRstTimer.all;
 
+use mylib.defCDCM.all;
 entity toplevel is
   Port (
     -- System ---------------------------------------------------------------
@@ -114,14 +115,14 @@ architecture Behavioral of toplevel is
     Index : DipID;
   end record;
   constant kSiTCP     : regLeaf := (Index => 1);
-  constant kClkOut    : regLeaf := (Index => 2);
+  constant kPhaseMode : regLeaf := (Index => 2);
   constant kIdle      : regLeaf := (Index => 3);
   constant kNC4       : regLeaf := (Index => 4);
   constant kDummy     : regLeaf := (Index => 0);
 
   -- MIKUMARI -----------------------------------------------------------------------------
-  constant  kPcbVersion : string:= "GN-2006-4";
-  --constant  kPcbVersion : string:= "GN-2006-1";
+  --constant  kPcbVersion : string:= "GN-2006-4";
+  constant  kPcbVersion : string:= "GN-2006-1";
 
   function GetMikuIoStd(version: string) return string is
   begin
@@ -137,6 +138,7 @@ architecture Behavioral of toplevel is
   signal reset_shiftreg       : std_logic_vector(7 downto 0);
   signal sync_reset           : std_logic;
 
+  signal rst_ref_clk          : std_logic;
   signal cbt_lane_up          : std_logic;
   signal pattern_error        : std_logic;
   signal watchdog_error       : std_logic;
@@ -145,6 +147,11 @@ architecture Behavioral of toplevel is
   signal gmod_clk             : std_logic;
 
   signal cbt_tap_value        : std_logic_vector(4 downto 0);
+  
+  -- CPS
+  signal tap_value            : std_logic_vector(kWidthTap-1 downto 0);
+  signal bitslip_num          : std_logic_vector(kWidthBitSlipNum-1 downto 0);
+  signal phase_ready          : std_logic;
 
   attribute mark_debug of cbt_lane_up   : signal is "true";
   attribute mark_debug of pattern_error   : signal is "true";
@@ -401,7 +408,8 @@ architecture Behavioral of toplevel is
   clk_locked      <= clk_sys_locked and clk_miku_locked;
 
 --  c6c_reset       <= (not clk_sys_locked) or (not delayed_usr_rstb);
-  c6c_reset       <= '1';
+--  c6c_reset       <= '1';
+  c6c_reset       <= (not USR_RSTB) or rst_ref_clk;
   mmcm_cdcm_reset <= (not delayed_usr_rstb);
 
   system_reset    <= (not clk_miku_locked) or (not USR_RSTB);
@@ -410,8 +418,10 @@ architecture Behavioral of toplevel is
   user_reset      <= system_reset or rst_from_bus or emergency_reset(0);
   bct_reset       <= system_reset or emergency_reset(0);
 
-  NIM_OUT(1)  <= c6c_slow when(DIP(kClkOut.Index) = '1') else '0';
-  NIM_OUT(2)  <= mod_clk  when(DIP(kClkOut.Index) = '1') else pulse_out;
+--  NIM_OUT(1)  <= c6c_slow when(DIP(kClkOut.Index) = '1') else '0';
+--  NIM_OUT(2)  <= mod_clk  when(DIP(kClkOut.Index) = '1') else pulse_out;
+  NIM_OUT(1)  <= mod_clk;
+  NIM_OUT(2)  <= c6c_slow;
 
   dip_sw(1)   <= DIP(1);
   dip_sw(2)   <= DIP(2);
@@ -419,26 +429,62 @@ architecture Behavioral of toplevel is
   dip_sw(4)   <= DIP(4);
 
   LED         <= mikumari_link_up & tcp_isActive(0) & clk_sys_locked & CDCE_LOCK;
+  LED         <= phase_ready & power_on_init & rst_ref_clk & CDCE_LOCK;
 
   -- MIKUMARI --------------------------------------------------------------------------
-  cbt_tap_value <= "01010" when(DIP(4 downto 3) = "00") else
-                   "00000" when(DIP(4 downto 3) = "01") else
-                   "10000" when(DIP(4 downto 3) = "10") else "01010";
+--  cbt_tap_value <= "01010" when(DIP(4 downto 3) = "00") else
+--                   "00000" when(DIP(4 downto 3) = "01") else
+--                   "10000" when(DIP(4 downto 3) = "10") else "01010";
 
-  u_KeepInit : process(system_reset, clk_slow)
-    variable counter   : integer:= 0;
-  begin
-    if(system_reset = '1') then
-      power_on_init   <= '1';
-      counter         := 16#0FFFFFFF#;
-    elsif(clk_slow'event and clk_slow = '1') then
-      if(counter = 0) then
-        power_on_init   <= '0';
-      else
-        counter   := counter -1;
-      end if;
-    end if;
-  end process;
+--  u_KeepInit : process(system_reset, clk_slow)
+--    variable counter   : integer:= 0;
+--  begin
+--    if(system_reset = '1') then
+--      power_on_init   <= '1';
+--      counter         := 16#0FFFFFFF#;
+--    elsif(clk_slow'event and clk_slow = '1') then
+--      if(counter = 0) then
+--        power_on_init   <= '0';
+--      else
+--        counter   := counter -1;
+--      end if;
+--    end if;
+--  end process;
+  u_CPS: entity mylib.phaseSelection
+    generic map(
+      enDebug         => TRUE
+    )
+    port map(
+      clk_base        => clk_slow,
+      rst_base        => system_reset,
+      clk_sys         => clk_sys,
+      rst_sys         => pwr_on_reset,
+      
+      mode            => dip_sw(kPhaseMode.Index),
+      mikumariLinkUp  => mikumari_link_up,
+      tapValue        => tap_value,
+      bitslipNum      => bitslip_num,
+      cdceLocked      => CDCE_LOCK,
+      
+      rstCECE62002    => rst_ref_clk,
+      initCBT         => power_on_init,
+      
+      isReady         => phase_ready,
+    
+      CS              => EEP_CS(2),
+      SK              => EEP_SK(2),
+      DI              => EEP_DI(2),
+      DO              => EEP_DO(2),
+
+      -- local bus
+      addrLocalBus    => addr_LocalBus,
+      dataLocalBusIn  => data_LocalBusIn,
+      dataLocalBusOut => data_LocalBusOut(kCPS.ID),
+      reLocalBus      => re_LocalBus(kCPS.ID),
+      weLocalBus      => we_LocalBus(kCPS.ID),
+      readyLocalBus   => ready_LocalBus(kCPS.ID)
+    );
+
 
   u_Miku_Inst : entity mylib.MikumariBlock
     generic map(
@@ -496,8 +542,8 @@ architecture Behavioral of toplevel is
       pattErr       => pattern_error,
       watchDogErr   => watchdog_error,
 
-      tapValueOut   => open,
-      bitslipNum    => open,
+      tapValueOut   => tap_value,
+      bitslipNum    => bitslip_num,
       serdesOffset  => open,
       firstBitPatt  => open,
 
@@ -576,7 +622,7 @@ architecture Behavioral of toplevel is
     port map(
       rst                 => system_reset,
       clk                 => clk_slow,
-      refClkIn            => clk_spi,
+      refClkIn            => gmod_clk,
 
       chipReset           => c6c_reset,
       clkIndep            => clk_sys,
@@ -942,32 +988,32 @@ architecture Behavioral of toplevel is
     );
 
   --
-  u_MMCM_CDCM : mmcm_cdcm
-    port map (
-      -- Clock out ports
-      clk_fast  => clk_fast,
-      clk_slow  => clk_slow,
-      -- Status and control signals
-      reset     => mmcm_cdcm_reset,
-      locked    => mmcm_cdcm_locked,
-      -- Clock in ports
-      clk_in1   => gmod_clk
-   );
+--  u_MMCM_CDCM : mmcm_cdcm
+--    port map (
+--      -- Clock out ports
+--      clk_fast  => clk_fast,
+--      clk_slow  => clk_slow,
+--      -- Status and control signals
+--      reset     => mmcm_cdcm_reset,
+--      locked    => mmcm_cdcm_locked,
+--      -- Clock in ports
+--      clk_in1   => gmod_clk
+--   );
 
   -- CDCE clocks --
 --  pll_is_locked   <= mmcm_cdcm_locked and CDCE_LOCK;
 
---  u_BUFG_Slow : BUFG
---    port map (
---      O => clk_slow, -- 1-bit output: Clock output
---      I => c6c_slow  -- 1-bit input: Clock input
---    );
---
---  u_BUFG_Fast : BUFG
---    port map (
---      O => clk_fast, -- 1-bit output: Clock output
---      I => c6c_fast  -- 1-bit input: Clock input
---    );
+  u_BUFG_Slow : BUFG
+    port map (
+      O => clk_slow, -- 1-bit output: Clock output
+      I => c6c_slow  -- 1-bit input: Clock input
+    );
+
+  u_BUFG_Fast : BUFG
+    port map (
+      O => clk_fast, -- 1-bit output: Clock output
+      I => c6c_fast  -- 1-bit input: Clock input
+    );
 
   u_IBUFDS_SLOW_inst : IBUFDS
     generic map (

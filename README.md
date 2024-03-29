@@ -25,9 +25,9 @@ Please see the installation guide for [AMANEQ-Skeleton](https://github.com/spadi
 - 2nd-bit: Turn on/off phase selection unit
   - 0: Un-used
   - 1: Select clock phase according to EEPROM
-- 3rd-bit: NC
-  - 0: NC
-  - 1: NC
+- 3rd-bit: Select MIKUMARI data pattern
+  - 0: 8-bit incremental values are continuously transferred with 64-bit frame
+  - 1: Idle pattern, pure clock signal, is transferred
 - 4th-bit: NC
   - 0: NC
   - 1: NC
