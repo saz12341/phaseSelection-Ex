@@ -121,8 +121,8 @@ architecture Behavioral of toplevel is
   constant kDummy     : regLeaf := (Index => 0);
 
   -- MIKUMARI -----------------------------------------------------------------------------
-  --constant  kPcbVersion : string:= "GN-2006-4";
-  constant  kPcbVersion : string:= "GN-2006-1";
+  constant  kPcbVersion : string:= "GN-2006-4";
+  --constant  kPcbVersion : string:= "GN-2006-1";
 
   function GetMikuIoStd(version: string) return string is
   begin
@@ -403,8 +403,8 @@ architecture Behavioral of toplevel is
     generic map(kNumDelay => 128)
     port map(clk_sys, USR_RSTB, delayed_usr_rstb);
 
---  clk_miku_locked <= CDCE_LOCK;
-  clk_miku_locked <= mmcm_cdcm_locked;
+  clk_miku_locked <= CDCE_LOCK;
+--  clk_miku_locked <= mmcm_cdcm_locked;
   clk_locked      <= clk_sys_locked and clk_miku_locked;
 
 --  c6c_reset       <= (not clk_sys_locked) or (not delayed_usr_rstb);
@@ -428,7 +428,7 @@ architecture Behavioral of toplevel is
   dip_sw(3)   <= DIP(3);
   dip_sw(4)   <= DIP(4);
 
-  LED         <= mikumari_link_up & tcp_isActive(0) & clk_sys_locked & CDCE_LOCK;
+--  LED         <= mikumari_link_up & tcp_isActive(0) & clk_sys_locked & CDCE_LOCK;
   LED         <= phase_ready & power_on_init & rst_ref_clk & CDCE_LOCK;
 
   -- MIKUMARI --------------------------------------------------------------------------
@@ -450,6 +450,8 @@ architecture Behavioral of toplevel is
 --      end if;
 --    end if;
 --  end process;
+
+  -- CPS -------------------------------------------------------------------------------
   u_CPS: entity mylib.phaseSelection
     generic map(
       enDebug         => TRUE
