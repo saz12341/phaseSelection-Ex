@@ -313,6 +313,8 @@ set_property IOSTANDARD LVCMOS25 [get_ports {EEP_SK[*]}]
 set_property IOSTANDARD LVCMOS25 [get_ports {EEP_DI[*]}]
 set_property IOSTANDARD LVCMOS25 [get_ports {EEP_DO[*]}]
 
+set_property PULLUP TRUE [get_ports {EEP_DO[2]}]
+
 # NIM-IO ---------------------------------------------------------------
 set_property IOSTANDARD LVCMOS15 [get_ports {NIM_IN[*]}]
 set_property IOSTANDARD LVCMOS15 [get_ports {NIM_OUT[*]}]
