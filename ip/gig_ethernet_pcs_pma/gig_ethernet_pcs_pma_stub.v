@@ -2,10 +2,10 @@
 // Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
 // --------------------------------------------------------------------------------
 // Tool Version: Vivado v.2023.1 (win64) Build 3865809 Sun May  7 15:05:29 MDT 2023
-// Date        : Fri Mar 29 14:06:07 2024
+// Date        : Fri Mar 29 14:54:45 2024
 // Host        : DESKTOP-4Q9CAA9 running 64-bit major release  (build 9200)
 // Command     : write_verilog -force -mode synth_stub
-//               c:/Documents/github/saz12341/phaseSelection-Ex/ip/gig_ethernet_pcs_pma/gig_ethernet_pcs_pma_stub.v
+//               c:/Documents/github/saz12341/phaseSelection-Ex/build/phaseSelection-Ex.gen/sources_1/ip/gig_ethernet_pcs_pma/gig_ethernet_pcs_pma_stub.v
 // Design      : gig_ethernet_pcs_pma
 // Purpose     : Stub declaration of top-level module interface
 // Device      : xc7k160tffg676-2
