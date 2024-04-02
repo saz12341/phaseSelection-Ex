@@ -457,12 +457,12 @@ architecture Behavioral of toplevel is
       enDebug         => TRUE
     )
     port map(
-      clk_base        => clk_slow,
-      rst_base        => system_reset,
-      clk_sys         => clk_sys,
-      rst_sys         => pwr_on_reset,
+      clkBase         => clk_slow,
+      rstBase         => system_reset,
+      clkSys          => clk_sys,
+      rstSys          => pwr_on_reset,
       
-      mode            => dip_sw(kPhaseMode.Index),
+      enPhaseSelection=> dip_sw(kPhaseMode.Index),
       mikumariLinkUp  => mikumari_link_up,
       tapValue        => tap_value,
       bitslipNum      => bitslip_num,
